@@ -54,7 +54,7 @@ services:
       # -----------------------------------------------------------------------
       # Internal service wiring (do NOT change hostnames)
       # -----------------------------------------------------------------------
-      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD:-postgres}@database:5432/postgres
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
       - CACHE_ENABLED=true
 
@@ -208,7 +208,7 @@ services:
         condition: service_healthy
     environment:
       # Internal wiring (must match api service)
-      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD:-postgres}@database:5432/postgres
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
       - CACHE_ENABLED=true
       # Resource-level ENV variables (LLM keys, auth, toggles) are injected by Coolify automatically.
@@ -222,7 +222,7 @@ services:
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data/
