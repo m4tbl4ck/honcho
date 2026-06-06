@@ -100,7 +100,7 @@ services:
       coolify: null
 
   redis:
-    image: redis:latest
+    image: redis/redis:latest
     restart: unless-stopped
     volumes:
       - redis-data:/data
