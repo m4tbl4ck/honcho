@@ -9,18 +9,20 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      embeddings:
+        condition: service_started
     ports:
       - "8000"
+    environment:
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
+      - CACHE_URL=redis://redis:6379/0?suppress=true
+      - CACHE_ENABLED=true
     healthcheck:
       test: ["CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 15s
-    environment:
-      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
-      - CACHE_URL=redis://redis:6379/0?suppress=true
-      - CACHE_ENABLED=true
+      start_period: 40s
     restart: unless-stopped
 
   deriver:
@@ -33,6 +35,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      embeddings:
+        condition: service_started
     environment:
       - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
@@ -68,9 +72,18 @@ services:
       timeout: 5s
       retries: 5
 
+  embeddings:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.6
+    command: ["--model-id", "BAAI/bge-m3", "--auto-truncate"]
+    restart: unless-stopped
+    volumes:
+      - tei-data:/data
+
 volumes:
   pgdata:
   redis-data:
+  tei-data:
+  
 networks:
   coolify:
     external: true
