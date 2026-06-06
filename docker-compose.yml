@@ -27,25 +27,8 @@ services:
       context: .
       dockerfile: Dockerfile
     entrypoint: ["sh", "docker/entrypoint.sh"]
-    depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     ports:
       - "8000"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "/app/.venv/bin/python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://0.0.0.0:8000/health', timeout=2).read()",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     environment:
       - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
@@ -59,13 +42,6 @@ services:
       context: .
       dockerfile: Dockerfile
     entrypoint: ["/app/.venv/bin/python", "-m", "src.deriver"]
-    depends_on:
-      api:
-        condition: service_healthy
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       # Internal wiring (must match api service)
       - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
@@ -89,11 +65,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data/
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
       coolify: null
 
@@ -102,11 +73,6 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
       coolify: null
 
