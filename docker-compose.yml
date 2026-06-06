@@ -34,7 +34,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:54
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
       - CACHE_ENABLED=true
     restart: unless-stopped
@@ -71,7 +71,6 @@ services:
 volumes:
   pgdata:
   redis-data:
-
 networks:
   coolify:
     external: true
