@@ -1,57 +1,43 @@
-# Coolify-native Docker Compose for Honcho
-#
-# Usage in Coolify:
-# 1. Add this repo as a Docker Compose resource
-# 2. Coolify auto-detects SERVICE_FQDN from the "api" port
-# 3. Set required Environment Variables in the Coolify UI (see below)
-# 4. Deploy
-#
-# Required Coolify Environment Variables (set once in the UI, injected into ALL services):
-#   POSTGRES_PASSWORD       — Database password (also used by api + deriver)
-#   LLM_OPENAI_API_KEY      — Required LLM provider key (or ANTHROPIC / GEMINI)
-#
-# Optional toggles you may want to override:
-#   AUTH_USE_AUTH           — Enable JWT auth (default: false)
-#   AUTH_JWT_SECRET         — Required if AUTH_USE_AUTH=true
-#   SENTRY_DSN              — Enable Sentry error tracking
-#   DERIVER_ENABLED         — Background worker (default: true)
-#   DREAM_ENABLED           — Dream processing (default: true)
-#   SUMMARY_ENABLED         — Message summarization (default: true)
-#   PEER_CARD_ENABLED       — Peer card feature (default: true)
-#   CACHE_ENABLED           — Redis cache (default: true, recommended)
-#   VECTOR_STORE_TYPE       — pgvector | turbopuffer | lancedb (default: pgvector)
-
 services:
   api:
     build:
       context: .
       dockerfile: Dockerfile
     entrypoint: ["sh", "docker/entrypoint.sh"]
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8000"
+    healthcheck:
+      test: ["CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
       - CACHE_ENABLED=true
     restart: unless-stopped
-    networks:
-      coolify: null
 
   deriver:
     build:
       context: .
       dockerfile: Dockerfile
     entrypoint: ["/app/.venv/bin/python", "-m", "src.deriver"]
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
-      # Internal wiring (must match api service)
-      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:54
       - CACHE_URL=redis://redis:6379/0?suppress=true
       - CACHE_ENABLED=true
-      # Resource-level ENV variables (LLM keys, auth, toggles) are injected by Coolify automatically.
-      # No need to repeat them here.
     restart: unless-stopped
-    networks:
-      coolify: null
 
   database:
     image: pgvector/pgvector:pg15
@@ -65,20 +51,27 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data/
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      coolify: null
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:8.2
     restart: unless-stopped
     volumes:
       - redis-data:/data
-    networks:
-      coolify: null
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:
   redis-data:
+
 networks:
   coolify:
     external: true
