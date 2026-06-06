@@ -192,6 +192,8 @@ services:
       - VECTOR_STORE_MIGRATED=${VECTOR_STORE_MIGRATED:-false}
 
     restart: unless-stopped
+    networks:
+      coolify: null
 
   deriver:
     image: ghcr.io/m4tbl4ck/honcho:latest
@@ -214,6 +216,8 @@ services:
       # Resource-level ENV variables (LLM keys, auth, toggles) are injected by Coolify automatically.
       # No need to repeat them here.
     restart: unless-stopped
+    networks:
+      coolify: null
 
   database:
     image: pgvector/pgvector:latest
@@ -232,6 +236,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      coolify: null
 
   redis:
     image: redis:latest
@@ -243,7 +249,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      coolify: null
 
 volumes:
   pgdata:
   redis-data:
+networks:
+  coolify:
+    external: true
