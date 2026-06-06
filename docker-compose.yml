@@ -40,7 +40,7 @@ services:
           "CMD",
           "/app/.venv/bin/python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()",
+          "import urllib.request; urllib.request.urlopen('http://0.0.0.0:8000/health', timeout=2).read()",
         ]
       interval: 5s
       timeout: 5s
