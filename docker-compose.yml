@@ -37,6 +37,8 @@ services:
         condition: service_healthy
       embeddings:
         condition: service_started
+      api:
+        condition: service_healthy
     environment:
       - DB_CONNECTION_URI=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/postgres
       - CACHE_URL=redis://redis:6379/0?suppress=true
